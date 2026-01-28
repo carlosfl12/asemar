@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { Descrypt } from '../../../services/descrypt';
@@ -210,5 +210,15 @@ export class InvoiceApiService {
     return this.http.get(
       this.api + `getFacturas?timestamp=${timestamp}&id_user=${id_user}`,
     );
+  }
+
+  async updateCorregidoStatus(id: string) {
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    });
+    return this.http.patch(this.apiUrl + `/api/corregido?id_doc=${id}`, '', {
+      headers,
+    });
   }
 }

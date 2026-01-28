@@ -273,6 +273,14 @@ export class InvoiceManagerComponent implements OnInit, OnDestroy {
             this.counters.setCorrect(data?.currentCount);
           } else {
             console.log('FACTURA YA CORREGIDA');
+            (
+              await this.invoiceApi.updateCorregidoStatus(inv.row.id_doc_drive)
+            ).subscribe({
+              next: async (data: any) => {
+                console.log('FACTURA MODIFICADA: ', data.id_doc_drive);
+              },
+            });
+            this.closeModal();
           }
         },
       });
