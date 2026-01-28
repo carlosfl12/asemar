@@ -8,9 +8,9 @@
     </div>
   </div>
 
-  <button class="btn-outline" (click)="goToSecciones()">
+  <!-- <button class="btn-outline" (click)="goToSecciones()">
     Pendientes ({{ pending() }})
-  </button>
+  </button> -->
 </header>
 
 <main class="container">
@@ -18,16 +18,45 @@
   <section class="list">
     <div class="facts">
       <h2>Mis Facturas</h2>
-      <p>Facturas: {{ correctInvoices() }} de {{ totalInvoices() }}</p>
+      <!-- <p>Facturas: {{ correctInvoices() }} de {{ totalInvoices() }}</p> -->
     </div>
 
-    <div class="card" *ngFor="let row of invoices()">
+    <!-- Filtro de usuarios -->
+    <div class="user-filter" *ngIf="availableUsers().length > 0">
+      <label class="filter-label" for="userSelect">Filtrar por usuario:</label>
+      <select
+        id="userSelect"
+        class="filter-select"
+        (change)="onUserSelectChange($event)"
+      >
+        <option value="">Todos los usuarios</option>
+        <option
+          *ngFor="let user of availableUsers()"
+          [value]="user"
+          [selected]="isUserSelected(user)"
+        >
+          {{ user }}
+        </option>
+      </select>
+    </div>
+
+    <div class="card" *ngFor="let row of filteredInvoices()">
       <div class="left">
         <span class="error-dot">!</span>
         <div class="meta">
           <div class="name">{{ row.fileName }}</div>
-          <div class="date">{{ row.createdAt }}</div>
+          <div class="date">
+            {{ row.createdAt }}
+            <span *ngIf="row.userName" class="user-name"
+              >· {{ row.userName }}</span
+            >
+          </div>
+          <div class="elapsed-time">
+            {{ getElapsedTime(row.entryTime) }}
+            <!-- SOLO SI NO VIENE DE LA BBDD-->
+          </div>
         </div>
+        <div></div>
       </div>
 
       <div class="right">

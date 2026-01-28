@@ -1,7 +1,11 @@
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { InvoiceRow, IncomingEnvelope, StoredRow } from '../../../models/invoice.models';
+import {
+  InvoiceRow,
+  IncomingEnvelope,
+  StoredRow,
+} from '../../../models/invoice.models';
 import { Router } from '@angular/router';
 import { InvoiceVisualizerComponent } from '../../../pages/notify/invoice-visualizer/invoice-visualizer.component';
 import { WebSocketService } from '../web-socket-service/web-socket-service.component';
@@ -33,7 +37,7 @@ interface EventLog {
   standalone: true,
   imports: [CommonModule],
   templateUrl: './sse.component.html',
-  styleUrls: ['./sse.component.scss']
+  styleUrls: ['./sse.component.scss'],
 })
 export class SseComponent implements OnInit, OnDestroy {
   private eventSource: EventSource | null = null;
@@ -50,10 +54,10 @@ export class SseComponent implements OnInit, OnDestroy {
   private readonly STORAGE_KEY = 'asm_sse_invoices';
 
   // URLs - Usar proxy local para evitar CORS
-  private readonly SSE_URL = '/sse';
+  private readonly SSE_URL = '/#/admin';
   private readonly SEND_EVENT_URL = '/send_event';
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
   wsService = inject(WebSocketService);
   public ultimoValor: number | null = null;
@@ -69,7 +73,7 @@ export class SseComponent implements OnInit, OnDestroy {
       },
       (error) => {
         console.error('Error en la suscripción de datos:', error);
-      }
+      },
     );
   }
 
@@ -80,14 +84,16 @@ export class SseComponent implements OnInit, OnDestroy {
   private loadFromStorage(): void {
     try {
       const raw = localStorage.getItem(this.STORAGE_KEY);
-      this.invoices = raw ? JSON.parse(raw) as StoredRow[] : [];
-    } catch { this.invoices = []; }
+      this.invoices = raw ? (JSON.parse(raw) as StoredRow[]) : [];
+    } catch {
+      this.invoices = [];
+    }
   }
 
   private saveToStorage(): void {
     try {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.invoices))
-    } catch { }
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.invoices));
+    } catch {}
   }
 
   toggleConnection(): void {
@@ -106,7 +112,7 @@ export class SseComponent implements OnInit, OnDestroy {
     try {
       // EventSource con withCredentials para CORS
       this.eventSource = new EventSource(this.SSE_URL, {
-        withCredentials: true
+        withCredentials: true,
       });
 
       this.eventSource.onopen = () => {
@@ -134,14 +140,17 @@ export class SseComponent implements OnInit, OnDestroy {
       this.eventSource.onmessage = (event: MessageEvent) => {
         console.log('📨 Mensaje SSE recibido:', event.data);
         this.handleEnvelope(event.data);
-      }
+      };
 
       // Evento 'notification'
-      this.eventSource.addEventListener('notification', (event: MessageEvent) => {
-        console.log('🔔 Evento notification recibido:', event);
-        const data = JSON.parse(event.data);
-        this.addLog(event.lastEventId, 'notification', data);
-      });
+      this.eventSource.addEventListener(
+        'notification',
+        (event: MessageEvent) => {
+          console.log('🔔 Evento notification recibido:', event);
+          const data = JSON.parse(event.data);
+          this.addLog(event.lastEventId, 'notification', data);
+        },
+      );
 
       // Evento 'connected'
       this.eventSource.addEventListener('connected', (event: MessageEvent) => {
@@ -155,7 +164,6 @@ export class SseComponent implements OnInit, OnDestroy {
         const data = JSON.parse(event.data);
         this.addLog(event.lastEventId, 'alert', data);
       });
-
     } catch (err) {
       this.error = 'No se pudo establecer la conexión';
       console.error(err);
@@ -205,15 +213,20 @@ export class SseComponent implements OnInit, OnDestroy {
       const rows = env?.payload?.data ?? [];
       if (!Array.isArray(rows)) return;
 
-      const stamped: StoredRow[] = rows.map(r => ({
+      const stamped: StoredRow[] = rows.map((r) => ({
         ...r,
         received_at: env.received_at,
-        client_ip: env.client_ip
+        client_ip: env.client_ip,
       }));
 
-      const key = (x: StoredRow) => [
-        x.received_at, x.nif_emision, x.nif_receptor, x.importe_total, x.numero_factura
-      ].join('|');
+      const key = (x: StoredRow) =>
+        [
+          x.received_at,
+          x.nif_emision,
+          x.nif_receptor,
+          x.importe_total,
+          x.numero_factura,
+        ].join('|');
 
       const existing = new Set(this.invoices.map(key));
 
@@ -252,15 +265,28 @@ export class SseComponent implements OnInit, OnDestroy {
             nif_emision: 'B98165095',
             nif_receptor: 'B42878389',
             cif_lateral: 'B98165095',
-            base1: null, iva1: null, cuota1: null, recargo1: null,
-            base2: null, iva2: null, cuota2: null, recargo2: null,
-            base3: null, iva3: null, cuota3: null, recargo3: null,
-            base_retencion: null, porcentaje_retencion: null, cuota_retencion: null,
-            importe_total: null, metodo_pago: null, prefijo: '600',
-            valid: false
-          }
-        ]
-      }
+            base1: null,
+            iva1: null,
+            cuota1: null,
+            recargo1: null,
+            base2: null,
+            iva2: null,
+            cuota2: null,
+            recargo2: null,
+            base3: null,
+            iva3: null,
+            cuota3: null,
+            recargo3: null,
+            base_retencion: null,
+            porcentaje_retencion: null,
+            cuota_retencion: null,
+            importe_total: null,
+            metodo_pago: null,
+            prefijo: '600',
+            valid: false,
+          },
+        ],
+      },
     };
 
     const id = `sim-fixed-${Date.now()}`;
@@ -272,13 +298,13 @@ export class SseComponent implements OnInit, OnDestroy {
     const testData = {
       message: 'Evento de prueba desde Angular',
       event_type: 'notification',
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     this.http.post(this.SEND_EVENT_URL, testData).subscribe({
       next: (response) => {
         console.log(response);
-      }
+      },
     });
     // this.http.post(this.SEND_EVENT_URL, testData).subscribe({
     //   next: (response) => {
@@ -301,7 +327,7 @@ export class SseComponent implements OnInit, OnDestroy {
       id,
       event,
       data,
-      time: new Date().toLocaleTimeString()
+      time: new Date().toLocaleTimeString(),
     };
 
     this.lastEvent = log;

@@ -37,6 +37,8 @@ export interface InvoiceRow {
   id_doc_drive: string;
   timestamp: string | null;
   code_error?: string | null;
+  id_user?: number | null;
+  id_session?: number | null;
 }
 
 export interface IncomingEnvelope {

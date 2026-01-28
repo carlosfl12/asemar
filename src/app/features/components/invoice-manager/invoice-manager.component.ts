@@ -5,6 +5,7 @@ import {
   inject,
   signal,
   OnInit,
+  OnDestroy,
   viewChild,
   ViewChild,
   ElementRef,
@@ -23,7 +24,12 @@ import { DynamicFieldResolverService } from '../../../shared/resolvers/dynamic-f
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { CounterService } from '../../../core/stores/counter.service';
 import { toSignal } from '@angular/core/rxjs-interop';
-
+import { UsersService } from '../../../services/users.service';
+import { firstValueFrom } from 'rxjs';
+import { InvoicesService } from '../../../services/invoices.service';
+import { Descrypt } from '../../../services/descrypt';
+import { HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 interface RealTimeData {
   value: number;
   timestamp: number | string;
@@ -32,7 +38,9 @@ interface UiInvoiceItem {
   id: number | string;
   fileName: string;
   createdAt: string;
+  entryTime: string; // Hora de entrada al sistema
   row: InvoiceRow;
+  userName?: string; // Nombre del usuario resuelto desde id_user
 }
 
 @Component({
@@ -47,18 +55,34 @@ interface UiInvoiceItem {
   templateUrl: './invoice-manager.component.html',
   styleUrls: ['./invoice-manager.component.scss'],
 })
-export class InvoiceManagerComponent implements OnInit {
+export class InvoiceManagerComponent implements OnInit, OnDestroy {
   @ViewChild('visualizador') visualizador!: ElementRef;
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private fb = inject(FormBuilder);
   private readonly apiUrl = environment.apiUrl;
+  private api = environment.api;
   private resolver = inject(DynamicFieldResolverService);
   private paramMapSig = toSignal(this.route.paramMap, {
     initialValue: this.route.snapshot.paramMap,
   });
   private lastPatchedId = signal<string | null>(null);
   private errorCodes: string[] = [];
+  private invoiceTime: string = '';
+  private timerInterval: ReturnType<typeof setInterval> | null = null;
+  private usersService = inject(UsersService);
+  private userNameCache = new Map<number, string>();
+  private invoicesService = inject(InvoicesService);
+  private descrypt = inject(Descrypt);
+  protected readonly title = signal('esphera-test');
+  protected dataInvoice = signal<any>(null);
+  private readonly http: HttpClient = inject(HttpClient);
+
+  private readonly key = 'UUe5aT9rjkcxMEXcyHbnVIk3AbKbdNhxTgYdTX84Al3x4Y3cMs';
+
+  private readonly realUrl = 'https://pr99.esphera.ai/api/public/index.php';
+
+  currentTime = signal<Date>(new Date());
 
   lastNumDoc = signal<number | null>(null);
   pdfUrl1!: SafeResourceUrl;
@@ -67,6 +91,24 @@ export class InvoiceManagerComponent implements OnInit {
 
   // HTML
   showAll = signal(false);
+
+  // Filtro de usuarios
+  selectedUserFilters = signal<Set<string>>(new Set());
+
+  availableUsers = computed(() => {
+    const users = new Set<string>();
+    this.invoices().forEach((inv) => {
+      if (inv.userName) users.add(inv.userName);
+    });
+    return Array.from(users).sort();
+  });
+
+  filteredInvoices = computed(() => {
+    const selected = this.selectedUserFilters();
+    const all = this.invoices();
+    if (selected.size === 0) return all;
+    return all.filter((inv) => inv.userName && selected.has(inv.userName));
+  });
 
   // Facturas
   invoices = signal<UiInvoiceItem[]>([]);
@@ -131,7 +173,7 @@ export class InvoiceManagerComponent implements OnInit {
 
   constructor(
     private sanitizer: DomSanitizer,
-    private counters: CounterService
+    private counters: CounterService,
   ) {
     effect(() => {
       const params = this.paramMapSig();
@@ -191,10 +233,27 @@ export class InvoiceManagerComponent implements OnInit {
     const userId = this.route.snapshot.paramMap.get('userId');
     this.selectedUserId.set(userId);
 
+    // Actualizar el tiempo cada segundo
+    this.timerInterval = setInterval(() => {
+      this.currentTime.set(new Date());
+    }, 1000);
+
     this.loadAll();
     this.subscription = this.wsService.messages$.subscribe({
       next: (evt: any) => {
         let payload = evt?.data ?? evt?.value ?? evt ?? null;
+        let data = evt;
+
+        console.log('[DATOS GENERALES]', data);
+        this.invoiceTime = new Date().toISOString();
+        console.log('[HORA ENTRADA]', this.invoiceTime);
+        const comparison = this.compareInvoiceTimeWithNow();
+        console.log('[HORA ACTUAL]', new Date().toISOString());
+        console.log(
+          '[DIFERENCIA]',
+          `${comparison.diffMs}ms (${comparison.diffSeconds}s)`,
+        );
+
         const pdfUrl = evt?.url ?? payload?.url ?? null;
         const numDoc = evt?.num_doc ?? null;
         const codeError = evt?.code_error ?? '';
@@ -234,14 +293,18 @@ export class InvoiceManagerComponent implements OnInit {
         if (Array.isArray(payload)) {
           const mapped = payload.map((row: any, i: number) => {
             if (!row.url && pdfUrl) row.url = pdfUrl;
-            return this.toUiItem(row as InvoiceRow, i + 1);
+            return this.toUiItem(row as InvoiceRow, i + 1, this.invoiceTime);
           });
           this.invoices.set(mapped);
         } else {
           const row = payload as InvoiceRow;
           if (!row.url && pdfUrl) row.url = pdfUrl;
 
-          const item = this.toUiItem(row, this.invoices().length + 1);
+          const item = this.toUiItem(
+            row,
+            this.invoices().length + 1,
+            this.invoiceTime,
+          );
           this.upsertInvoice(item);
 
           this.totalInvoices.set(numDoc);
@@ -251,6 +314,69 @@ export class InvoiceManagerComponent implements OnInit {
     });
     this.loadTotalInvoices();
     this.getPendingInvoices();
+  }
+
+  ngOnDestroy() {
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval);
+      this.timerInterval = null;
+    }
+    if (this.subscription) {
+      this.subscription.unsubscribe();
+    }
+  }
+
+  getElapsedTime(createdAt: string): string {
+    if (!createdAt) return '';
+
+    const created = new Date(createdAt);
+    if (isNaN(created.getTime())) return '';
+
+    const now = this.currentTime();
+    const diffMs = now.getTime() - created.getTime();
+
+    if (diffMs < 0) return 'Ahora';
+
+    const diffSeconds = Math.floor(diffMs / 1000);
+    const diffMinutes = Math.floor(diffSeconds / 60);
+    const diffHours = Math.floor(diffMinutes / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffDays > 0) {
+      return `Hace ${diffDays}d ${diffHours % 24}h`;
+    }
+    if (diffHours > 0) {
+      return `Hace ${diffHours}h ${diffMinutes % 60}m`;
+    }
+    if (diffMinutes > 0) {
+      return `Hace ${diffMinutes}m ${diffSeconds % 60}s`;
+    }
+    return `Hace ${diffSeconds}s`;
+  }
+
+  async getUserName(idUser: number | null | undefined): Promise<string> {
+    if (idUser === null || idUser === undefined) return '';
+
+    if (this.userNameCache.has(idUser)) {
+      return this.userNameCache.get(idUser)!;
+    }
+
+    try {
+      const response = await firstValueFrom(
+        this.usersService.getUsername(idUser),
+      );
+      const userName =
+        (response as any)?.username ||
+        (response as any)?.nombre ||
+        (response as any)?.name ||
+        `Usuario ${idUser}`;
+      this.userNameCache.set(idUser, userName);
+      console.log('NOMBRE USUARIO', userName);
+      return userName;
+    } catch (err) {
+      console.error('Error obteniendo nombre de usuario:', err);
+      return `Usuario ${idUser}`;
+    }
   }
 
   private isFilled(v: unknown) {
@@ -386,7 +512,8 @@ export class InvoiceManagerComponent implements OnInit {
 
   private toUiItem(
     row: InvoiceRow,
-    fallbackIndex: number | string
+    fallbackIndex: number | string,
+    entryTime?: string,
   ): UiInvoiceItem {
     const id = row.id_doc_drive;
 
@@ -395,33 +522,41 @@ export class InvoiceManagerComponent implements OnInit {
       id,
       fileName,
       createdAt: row.fecha ?? new Date().toLocaleString(),
+      entryTime: entryTime ?? row.timestamp ?? new Date().toISOString(),
       row: { ...row },
     };
   }
 
   async fetchAllInvoices(
     apiUrl: string,
-    opts: { userId?: string }
+    opts: { userId?: string },
   ): Promise<any[]> {
-    const params = new URLSearchParams();
-    if (opts.userId) params.set('user_id', opts.userId);
-    const url = `${apiUrl}/api/invoices${
-      params.toString() ? `?${params.toString()}` : ''
-    }`;
-    const res = await fetch(url, { headers: { Accept: 'application/json' } });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
+    // const params = new URLSearchParams();
+    // if (opts.userId) params.set('user_id', opts.userId);
+    // const url = `${apiUrl}/api/invoices${
+    //   params.toString() ? `?${params.toString()}` : ''
+    // }`;
+
+    const plainText = await this.getInvoice('', '');
+    console.log('TEXTO PLANO', plainText);
+
+    // const res = await fetch(url, { headers: { Accept: 'application/json' } });
+    // if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await plainText;
   }
 
   async loadAll() {
     const userId = this.selectedUserId() ?? '0';
     try {
       const rows = await this.fetchAllInvoices(this.apiUrl, { userId });
-      this.invoices.set(
-        rows.map((row: any, idx: number) =>
-          this.toUiItem(row, row.id ?? idx + 1)
-        )
+      const items = rows.map((row: any, idx: number) =>
+        this.toUiItem(row, row.id ?? idx + 1),
       );
+      this.invoices.set(items);
+
+      // Resolver nombres de usuario para cada factura
+      items.forEach((item) => this.resolveUserName(item));
+
       if (this.selectedId()) {
         this.createIframe();
       }
@@ -431,19 +566,17 @@ export class InvoiceManagerComponent implements OnInit {
   }
   open(inv: UiInvoiceItem) {
     const userId = this.selectedUserId() ?? '0';
-    this.router
-      .navigate(['/', userId, 'facturas', inv.row.id_doc_drive])
-      .then(() => {
-        if (inv.row.error_code) this.loadErrorCodes(inv.row.error_code);
-        console.log(inv.row);
-      });
+    this.router.navigate(['/', 'facturas', inv.row.id_doc_drive]).then(() => {
+      if (inv.row.error_code) this.loadErrorCodes(inv.row.error_code);
+      console.log('[INV ROW]', inv.row);
+    });
     document.body.style.overflow = 'hidden';
   }
 
   closeModal(): void {
     const userId = this.selectedUserId() ?? '0';
     document.body.style.overflow = '';
-    this.router.navigate(['/', userId, 'facturas']);
+    this.router.navigate(['/', 'facturas']);
   }
 
   async saveDataAndSend() {
@@ -486,7 +619,8 @@ export class InvoiceManagerComponent implements OnInit {
       num_apunte: updated.num_apunte,
       id_doc_drive: inv.row.id_doc_drive,
       timestamp: inv.row.timestamp,
-      userId: this.route.snapshot.paramMap.get('userId') ?? '',
+      userId:
+        inv.row.id_user ?? this.route.snapshot.paramMap.get('userId') ?? '',
       codEmpresa: inv.row.codigo_empresa,
     };
 
@@ -501,7 +635,6 @@ export class InvoiceManagerComponent implements OnInit {
       this.loadErrorCodes(errors);
       return;
     }
-
     try {
       await fetch(`${this.apiUrl}/api/invoices`, {
         method: 'PUT',
@@ -519,11 +652,55 @@ export class InvoiceManagerComponent implements OnInit {
     this.sendData(options);
   }
 
+  protected decryptPhpAes256Gcm(
+    encryptedData: string,
+    key: string,
+  ): Promise<string | null> {
+    return this.descrypt.decryptPhpAes256Gcm(encryptedData, key);
+  }
+
+  protected async getInvoice(
+    client_id: string,
+    invoice_id: string,
+  ): Promise<any> {
+    const params = new HttpParams()
+      .set('action', 'invoice')
+      .set('client_id', client_id)
+      .set('invoice_id', invoice_id);
+
+    try {
+      const data = await firstValueFrom(
+        this.http.get<{ invoice: any }>(this.realUrl, { params }),
+      );
+
+      if (data.invoice) {
+        // console.log('dentro');
+        const plainText = await this.decryptPhpAes256Gcm(
+          data.invoice,
+          this.key,
+        );
+        if (plainText) {
+          // console.log('Decrypted invoice:', plainText);
+          const parsed = JSON.parse(plainText);
+          this.dataInvoice.set(parsed);
+          return parsed;
+        } else {
+          console.error('Failed to decrypt the invoice data.');
+          return null;
+        }
+      }
+      return null;
+    } catch (error) {
+      console.error('Error fetching invoice:', error);
+      return null;
+    }
+  }
+
   compareResult(
     bases: number[],
     ivas: number[],
     recargos: number[],
-    total: number | null
+    total: number | null,
   ): boolean {
     let baseTotal = 0;
     let ivaTotal = 0;
@@ -550,7 +727,7 @@ export class InvoiceManagerComponent implements OnInit {
         [options.base1 ?? 0, options.base2 ?? 0, options.base3 ?? 0],
         [options.cuota1 ?? 0, options.cuota2 ?? 0, options.cuota3 ?? 0],
         [options.recargo1 ?? 0, options.recargo2 ?? 0, options.recargo3 ?? 0],
-        options.importe_total ?? 0
+        options.importe_total ?? 0,
       )
     ) {
       this.errorCodes.push('305');
@@ -581,6 +758,36 @@ export class InvoiceManagerComponent implements OnInit {
     this.showAll.update((v) => !v);
   }
 
+  toggleUserFilter(userName: string): void {
+    this.selectedUserFilters.update((set) => {
+      const newSet = new Set(set);
+      if (newSet.has(userName)) {
+        newSet.delete(userName);
+      } else {
+        newSet.add(userName);
+      }
+      return newSet;
+    });
+  }
+
+  isUserSelected(userName: string): boolean {
+    return this.selectedUserFilters().has(userName);
+  }
+
+  clearUserFilters(): void {
+    this.selectedUserFilters.set(new Set());
+  }
+
+  onUserSelectChange(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    const value = select.value;
+    if (value === '') {
+      this.clearUserFilters();
+    } else {
+      this.selectedUserFilters.set(new Set([value]));
+    }
+  }
+
   async loadErrorCodes(errorCode = '') {
     const codes = errorCode.split(';').filter((code) => code.trim() !== '');
 
@@ -608,6 +815,8 @@ export class InvoiceManagerComponent implements OnInit {
   }
 
   async sendData(options: any) {
+    console.log('[OPCIONES]', options);
+
     const userId = this.route.snapshot.paramMap.get('userId') ?? '';
     const inv = this.selectedInvoice();
     const total = Number(this.totalInvoices() ?? 0);
@@ -616,34 +825,45 @@ export class InvoiceManagerComponent implements OnInit {
       file: options.nombre_factura,
       tipo: options.tipo,
       totalFiles: String(total),
-      userId: userId,
+      userId: String(inv?.row.id_user ?? ''),
     });
 
     const dataToSend = {
       ...options,
       timestamp: inv?.row.timestamp || '',
-      userId: userId,
+      id_user: options.userId,
       file: options.nombre_factura,
       tipo: options.tipo,
       totalFiles: String(total),
+      status: 'completed',
+      corregido: 1,
     };
 
-    const url = `https://demo99.esphera.ai/ws/n8n/getCuentaContable.php?${qs.toString()}`;
-
+    // save factura
+    const url = this.api;
+    this.getInvoice(dataToSend.id_user, inv?.row.id_doc_drive || '');
     try {
-      const resp = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          data: dataToSend,
-        }),
-      });
+      const resp = await fetch(
+        url + `saveFactura?action=update&id_user=${dataToSend.id_user}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(dataToSend),
+        },
+      );
 
       if (!resp.ok) {
         throw new Error(`Error HTTP: ${resp.status}`);
       }
 
       const data = await resp.json();
+
+      const contadorUrl =
+        url +
+        `contador?id_user=${dataToSend.userId}&timestamp=${dataToSend.timestamp}`;
+      const response = await fetch(contadorUrl);
+      const resContador = await response.json();
+      console.log(resContador);
       this.counters.setCorrect(data?.currentCount);
     } catch (err) {
       console.error('Error', err);
@@ -679,6 +899,9 @@ export class InvoiceManagerComponent implements OnInit {
       return [normalized, ...list];
     });
 
+    // Resolver nombre de usuario si viene id_user
+    this.resolveUserName(normalized);
+
     const opened = this.selectedInvoice();
     if (opened && String(opened.id) === String(normalized.id)) {
       this.selectedInvoice.set({
@@ -688,6 +911,23 @@ export class InvoiceManagerComponent implements OnInit {
       });
       this.patchRowOnlyFilled?.(normalized.row);
     }
+  }
+
+  private async resolveUserName(item: UiInvoiceItem): Promise<void> {
+    const idUser = item.row?.id_user;
+    if (idUser === null || idUser === undefined) return;
+
+    const userName = await this.getUserName(idUser);
+
+    this.invoices.update((list) => {
+      const ix = list.findIndex((x) => String(x.id) === String(item.id));
+      if (ix >= 0) {
+        const copy = [...list];
+        copy[ix] = { ...copy[ix], userName };
+        return copy;
+      }
+      return list;
+    });
   }
 
   pdfUrl() {
@@ -729,19 +969,40 @@ export class InvoiceManagerComponent implements OnInit {
     }
   }
 
-  goToSecciones() {
-    this.router.navigate(['/secciones']);
-  }
-
   // Helper methods para manejar campos con control como array
   isControlArray(control: keyof InvoiceRow | (keyof InvoiceRow)[]): boolean {
     return Array.isArray(control);
   }
 
   asControlArray(
-    control: keyof InvoiceRow | (keyof InvoiceRow)[]
+    control: keyof InvoiceRow | (keyof InvoiceRow)[],
   ): (keyof InvoiceRow)[] {
     return Array.isArray(control) ? control : [control];
+  }
+
+  compareInvoiceTimeWithNow(): {
+    diffMs: number;
+    diffSeconds: number;
+    diffMinutes: number;
+    isOlder: boolean;
+  } {
+    if (!this.invoiceTime) {
+      return { diffMs: 0, diffSeconds: 0, diffMinutes: 0, isOlder: false };
+    }
+
+    const invoiceDate = new Date(this.invoiceTime);
+    const now = new Date();
+
+    const diffMs = now.getTime() - invoiceDate.getTime();
+    const diffSeconds = Math.floor(diffMs / 1000);
+    const diffMinutes = Math.floor(diffSeconds / 60);
+
+    return {
+      diffMs,
+      diffSeconds,
+      diffMinutes,
+      isOlder: diffMs > 0,
+    };
   }
 
   getControlLabel(controlName: keyof InvoiceRow): string {
