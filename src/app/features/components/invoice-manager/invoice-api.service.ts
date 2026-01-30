@@ -221,4 +221,25 @@ export class InvoiceApiService {
       headers,
     });
   }
+
+  /** Poner en la base de datos quien ha modificado la factura recibida */
+  async updatingUser() {
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    });
+    return this.http.post(this.api + '', '', {
+      headers: headers,
+    });
+  }
+
+  /** Cambiar en la base de datos el estado de una factura descartada */
+  async discardUserInvoice(id_user: Number, payload: any) {
+    return firstValueFrom(
+      this.http.post(
+        this.api + `saveFactura?action=update&id_user=${id_user}`,
+        payload,
+      ),
+    );
+  }
 }

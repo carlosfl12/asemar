@@ -91,6 +91,10 @@ export class InvoiceManagerComponent implements OnInit, OnDestroy {
   // UI state
   showAll = signal(false);
   selectedUserFilters = signal<Set<string>>(new Set());
+  pdfZoom = signal(1);
+  leftPanelWidth = signal(50);
+  rightPanelWidth = signal(50);
+  private isResizing = false;
 
   // Invoice state
   invoices = signal<UiInvoiceItem[]>([]);
@@ -183,6 +187,51 @@ export class InvoiceManagerComponent implements OnInit, OnDestroy {
     this.showAll.update((v) => !v);
   }
 
+  zoomIn(): void {
+    this.pdfZoom.update((z) => Math.min(z + 0.25, 3));
+  }
+
+  zoomOut(): void {
+    this.pdfZoom.update((z) => Math.max(z - 0.25, 0.5));
+  }
+
+  resetZoom(): void {
+    this.pdfZoom.set(1);
+  }
+
+  startResize(event: MouseEvent | TouchEvent): void {
+    this.isResizing = true;
+    event.preventDefault();
+
+    const moveHandler = (e: MouseEvent | TouchEvent) => {
+      if (!this.isResizing) return;
+
+      const container = document.querySelector('.modal-revision-body') as HTMLElement;
+      if (!container) return;
+
+      const containerRect = container.getBoundingClientRect();
+      const clientX = e instanceof MouseEvent ? e.clientX : e.touches[0].clientX;
+      const percentage = ((clientX - containerRect.left) / containerRect.width) * 100;
+
+      const clampedPercentage = Math.max(25, Math.min(75, percentage));
+      this.leftPanelWidth.set(clampedPercentage);
+      this.rightPanelWidth.set(100 - clampedPercentage);
+    };
+
+    const upHandler = () => {
+      this.isResizing = false;
+      document.removeEventListener('mousemove', moveHandler);
+      document.removeEventListener('mouseup', upHandler);
+      document.removeEventListener('touchmove', moveHandler);
+      document.removeEventListener('touchend', upHandler);
+    };
+
+    document.addEventListener('mousemove', moveHandler);
+    document.addEventListener('mouseup', upHandler);
+    document.addEventListener('touchmove', moveHandler);
+    document.addEventListener('touchend', upHandler);
+  }
+
   toggleUserFilter(userName: string): void {
     this.selectedUserFilters.update((set) => {
       const newSet = new Set(set);
@@ -221,6 +270,15 @@ export class InvoiceManagerComponent implements OnInit, OnDestroy {
     control: keyof InvoiceRow | (keyof InvoiceRow)[],
   ): (keyof InvoiceRow)[] {
     return Array.isArray(control) ? control : [control];
+  }
+
+  hasFieldError(controlName: string): boolean {
+    return this.fields.some((f) => {
+      if (Array.isArray(f.control)) {
+        return f.control.includes(controlName as keyof InvoiceRow);
+      }
+      return f.control === controlName;
+    });
   }
 
   pdfUrl(): string {
@@ -290,30 +348,51 @@ export class InvoiceManagerComponent implements OnInit, OnDestroy {
     const inv = this.selectedInvoice();
     if (!inv?.row) return;
 
-    try {
-      await this.invoiceApi.discardInvoice(
-        inv.row.id_doc_drive,
-        inv.row.timestamp ?? '',
-      );
+    this.invoiceApi
+      .getCorregidoStatus(inv.row.timestamp || '', inv.row.id_user || 0)
+      .subscribe({
+        next: async (resp: any) => {
+          if (resp.data[0].corregido === 0) {
+            await this.invoiceApi.discardInvoice(
+              inv.row.id_doc_drive,
+              inv.row.timestamp ?? '',
+            );
 
-      const updated = this.form.getRawValue() as InvoiceRow;
-      const userId = this.route.snapshot.paramMap.get('userId') ?? '';
-      const options = {
-        ...this.invoiceFormService.buildSaveOptions(updated, inv.row, userId),
-        corregido: '-1',
-      };
+            const updated = this.form.getRawValue() as InvoiceRow;
+            const userId = this.route.snapshot.paramMap.get('userId') ?? '';
+            const options = {
+              ...this.invoiceFormService.buildSaveOptions(
+                updated,
+                inv.row,
+                userId,
+              ),
+              corregido: '-1',
+              status: 'warning',
+            };
 
-      const total = Number(this.totalInvoices() ?? 0);
-      const data = await this.invoiceApi.sendDiscardedInvoiceData(
-        options,
-        total,
-      );
-      this.counters.setCorrect(data?.currentCount);
+            const total = Number(this.totalInvoices() ?? 0);
+            const data = await this.invoiceApi.sendDiscardedInvoiceData(
+              options,
+              total,
+            );
+            this.invoiceApi.discardUserInvoice(inv.row.id_user || 0, options);
 
-      this.closeModal();
-    } catch (err) {
-      console.error('Error al descartar factura:', err);
-    }
+            this.counters.setCorrect(data?.currentCount);
+
+            this.closeModal();
+          } else {
+            console.log('FACTURA YA CORREGIDA');
+            (
+              await this.invoiceApi.updateCorregidoStatus(inv.row.id_doc_drive)
+            ).subscribe({
+              next: async (data: any) => {
+                console.log('FACTURA MODIFICADA: ', data.id_doc_drive);
+              },
+            });
+            this.closeModal();
+          }
+        },
+      });
   }
 
   // ==================== PRIVATE METHODS ====================

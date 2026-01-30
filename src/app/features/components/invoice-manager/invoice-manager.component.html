@@ -74,247 +74,362 @@
 ></div>
 
 <div
-  class="modal"
+  class="modal-revision"
   *ngIf="selectedInvoice() as inv"
   role="dialog"
   aria-modal="true"
 >
-  <div class="modal-header">
-    <h3>
-      Editar Factura: {{ inv.fileName }}
-      <small
-        *ngIf="lastNumDoc() !== null"
-        style="font-weight: 400; color: #6b7280; margin-left: 8px"
-      >
-        · Doc #{{ lastNumDoc() }}
-      </small>
-    </h3>
-    <div
-      class="form-toggle"
-      style="display: flex; align-items: center; gap: 0.5rem; margin: 0 0 1rem"
-    >
-      <button
-        class="toggle-btn"
-        (click)="toggleShowAll()"
-        [class.active]="showAll()"
-        [attr.aria-pressed]="showAll()"
-        [title]="showAll() ? 'Mostrando todos' : 'Mostrando fallidos'"
-      >
-        {{ showAll() ? "Mostrar fallidos" : "Mostrar todos" }}
-      </button>
-      <button class="toggle-btn" (click)="discardInvoice()">Descartar</button>
+  <!-- Header del modal -->
+  <header class="modal-revision-header">
+    <div class="header-left">
+      <h1 class="header-title">REVISIÓN DE FACTURA</h1>
+      <span class="header-doc-number">#{{ lastNumDoc() ?? inv.id }}</span>
     </div>
-  </div>
+    <div class="header-actions">
+      <button
+        type="button"
+        class="btn-header btn-outline-header"
+        (click)="closeModal()"
+      >
+        <span class="btn-icon">←</span> VOLVER AL DETALLE DE LOTE
+      </button>
+      <button
+        type="button"
+        class="btn-header btn-outline-header"
+        (click)="discardInvoice()"
+      >
+        <span class="btn-icon">🏛</span> INCOMPLETA
+      </button>
+      <button
+        type="button"
+        class="btn-header btn-primary-header"
+        (click)="saveDataAndSend()"
+      >
+        <span class="btn-icon">💾</span> GUARDAR FACTURA
+      </button>
+    </div>
+  </header>
 
-  <div class="modal-body">
-    <!-- PDF -->
-    <div #visualizador class="pdf-pane" [innerHTML]="iframe"></div>
-
-    <!-- Formulario ligado 1:1 a InvoiceRow -->
-    <form class="form" [formGroup]="form" (ngSubmit)="saveDataAndSend()">
-      <ng-container *ngIf="!showAll(); else fullView">
-        <fieldset>
-          <legend>Datos fallidos</legend>
-          <ng-container *ngFor="let f of fields">
-            <ng-container *ngIf="isControlArray(f.control); else singleControl">
-              <div class="field-group">
-                <span class="field-group-label">{{ f.label }}</span>
-                <label
-                  *ngFor="let ctrl of asControlArray(f.control); let i = index"
-                  [attr.for]="'fld-' + f.key + '-' + i"
-                >
-                  {{ getControlLabel(ctrl) }}
-                  <input
-                    class="campo-fallido"
-                    [id]="'fld-' + f.key + '-' + i"
-                    [type]="f.type"
-                    [step]="f.step || null"
-                    [formControlName]="ctrl"
-                    [attr.placeholder]="f.placeholder || null"
-                  />
-                </label>
-              </div>
-            </ng-container>
-            <!-- Si control es único, renderizar como antes -->
-            <ng-template #singleControl>
-              <label [attr.for]="'fld-' + f.key"
-                >{{ f.label }}
-                <input
-                  class="campo-fallido"
-                  [id]="'fld-' + f.key"
-                  [type]="f.type"
-                  [step]="f.step || null"
-                  [formControlName]="$any(f.control)"
-                  [attr.placeholder]="f.placeholder || null"
-                />
-              </label>
-            </ng-template>
-          </ng-container>
-        </fieldset>
-      </ng-container>
-      <ng-template #fullView>
-        <h4>Datos de la Factura</h4>
-
-        <label>
-          Número de Factura
-          <input formControlName="numero_factura" />
-        </label>
-        <label>
-          Nombre de Factura
-          <input formControlName="nombre_factura" />
-        </label>
-
-        <label>
-          Fecha de Factura
-          <input type="date" formControlName="fecha" placeholder="dd/mm/aaaa" />
-        </label>
-
-        <!-- <label>
-          Código empresa
-          <input type="number" formControlName="cod_empresa" />
-        </label> -->
-
-        <label
-          >Nombre Cliente
-          <input
-            formControlName="nombre_cliente"
-            placeholder="Nombre del cliente"
-          />
-        </label>
-
-        <label>
-          Nombre del Proveedor
-          <input
-            formControlName="nombre_proveedor"
-            placeholder="Nombre de la empresa"
-          />
-        </label>
-
-        <label>
-          NIF/CIF Proveedor (emisión)
-          <input formControlName="nif_emision" />
-        </label>
-
-        <label>
-          NIF/CIF Receptor
-          <input formControlName="nif_receptor" />
-        </label>
-
-        <label
-          >CIF lateral
-          <input formControlName="cif_lateral" />
-        </label>
-
-        <label>
-          Subtotal-1 (€)
-          <input type="number" step="0.01" formControlName="base1" />
-        </label>
-
-        <label>
-          IVA-1 (% o €)
-          <input type="number" step="0.01" formControlName="iva1" />
-        </label>
-
-        <label>
-          Cuota-1 (€)
-          <input type="number" step="0.01" formControlName="cuota1" />
-        </label>
-
-        <label>
-          Recargo-1 (€)
-          <input type="number" step="0.01" formControlName="recargo1" />
-        </label>
-
-        <label>
-          Subtotal-2 (€)
-          <input type="number" step="0.01" formControlName="base2" />
-        </label>
-
-        <label>
-          IVA-2 (% o €)
-          <input type="number" step="0.01" formControlName="iva2" />
-        </label>
-
-        <label>
-          Cuota-2 (€)
-          <input type="number" step="0.01" formControlName="cuota2" />
-        </label>
-
-        <label>
-          Recargo-2 (€)
-          <input type="number" step="0.01" formControlName="recargo2" />
-        </label>
-
-        <label>
-          Subtotal-3 (€)
-          <input type="number" step="0.01" formControlName="base3" />
-        </label>
-
-        <label>
-          IVA-3 (% o €)
-          <input type="number" step="0.01" formControlName="iva3" />
-        </label>
-
-        <label>
-          Cuota-3 (€)
-          <input type="number" step="0.01" formControlName="cuota3" />
-        </label>
-
-        <label>
-          Recargo-3 (€)
-          <input type="number" step="0.01" formControlName="recargo3" />
-        </label>
-
-        <label>
-          Base retención
-          <input type="number" step="0.01" formControlName="base_retencion" />
-        </label>
-
-        <label>
-          % Retención
-          <input
-            type="number"
-            step="1"
-            formControlName="porcentaje_retencion"
-          />
-        </label>
-
-        <label>
-          Cuota Retención
-          <input type="number" step="1" formControlName="cuota_retencion" />
-        </label>
-        <label>
-          Tipo de Factura
-          <input formControlName="tipo" placeholder="Compras o Ventas" />
-        </label>
-
-        <label>
-          Importe Total (€)
-          <input type="number" step="0.01" formControlName="importe_total" />
-        </label>
-
-        <!-- Campos adicionales útiles -->
-        <label>
-          Método de pago
-          <input
-            formControlName="metodo_pago"
-            placeholder="Transferencia, tarjeta…"
-          />
-        </label>
-
-        <label>
-          Prefijo
-          <input formControlName="prefijo" placeholder="Ej: F-2024" />
-        </label>
-      </ng-template>
-
-      <!-- Ocultos en UI pero parte del modelo -->
-      <input type="hidden" formControlName="url" />
-      <input type="hidden" formControlName="valid" />
-
-      <div class="actions">
-        <button type="submit" class="btn-primary">💾 Guardar y Enviar</button>
+  <!-- Body del modal -->
+  <div class="modal-revision-body">
+    <!-- Panel PDF/Imagen -->
+    <div class="pdf-panel" [style.width.%]="leftPanelWidth()">
+      <div class="pdf-container">
+        <div
+          #visualizador
+          class="pdf-viewer"
+          [innerHTML]="iframe"
+          [style.transform]="'scale(' + pdfZoom() + ')'"
+        ></div>
+        <button class="pdf-external-link" title="Abrir en nueva ventana">
+          <span>⧉</span>
+        </button>
       </div>
-    </form>
+      <div class="pdf-controls">
+        <button type="button" class="zoom-btn" (click)="zoomOut()" title="Reducir">−</button>
+        <span class="zoom-level">{{ (pdfZoom() * 100) | number:'1.0-0' }}%</span>
+        <button type="button" class="zoom-btn" (click)="zoomIn()" title="Ampliar">+</button>
+        <button type="button" class="zoom-btn zoom-reset" (click)="resetZoom()" title="Restablecer">↺</button>
+      </div>
+    </div>
+
+    <!-- Divisor arrastrable -->
+    <div
+      class="resizer"
+      (mousedown)="startResize($event)"
+      (touchstart)="startResize($event)"
+    >
+      <div class="resizer-handle"></div>
+    </div>
+
+    <!-- Panel Formulario -->
+    <div class="form-panel" [style.width.%]="rightPanelWidth()">
+      <form [formGroup]="form" (ngSubmit)="saveDataAndSend()">
+        <!-- Ocultos -->
+        <input type="hidden" formControlName="url" />
+        <input type="hidden" formControlName="valid" />
+
+        <!-- IDENTIFICACIÓN -->
+        <section class="form-section">
+          <h2 class="section-title">IDENTIFICACIÓN</h2>
+          <div class="field-row field-row-2">
+            <div class="field">
+              <label class="field-label">Nº Factura*</label>
+              <input
+                type="text"
+                class="field-input"
+                [class.campo-fallido]="hasFieldError('numero_factura')"
+                formControlName="numero_factura"
+              />
+            </div>
+            <div class="field">
+              <label class="field-label">Fecha*</label>
+              <input
+                type="date"
+                class="field-input"
+                [class.campo-fallido]="hasFieldError('fecha')"
+                formControlName="fecha"
+              />
+            </div>
+          </div>
+        </section>
+
+        <!-- IMPORTES E IVA -->
+        <section class="form-section">
+          <h2 class="section-title">IMPORTES E IVA</h2>
+
+          <!-- Línea Impositiva 1 -->
+          <div class="subsection">
+            <span class="subsection-label">LÍNEA IMPOSITIVA 1</span>
+            <div class="field-row field-row-4">
+              <div class="field">
+                <label class="field-label">Base</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  class="field-input"
+                  [class.campo-fallido]="hasFieldError('base1')"
+                  formControlName="base1"
+                />
+              </div>
+              <div class="field">
+                <label class="field-label">IVA %</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  class="field-input"
+                  [class.campo-fallido]="hasFieldError('iva1')"
+                  formControlName="iva1"
+                />
+              </div>
+              <div class="field">
+                <label class="field-label">Cuota</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  class="field-input"
+                  [class.campo-fallido]="hasFieldError('cuota1')"
+                  formControlName="cuota1"
+                />
+              </div>
+              <div class="field">
+                <label class="field-label">Rec.</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  class="field-input"
+                  [class.campo-fallido]="hasFieldError('recargo1')"
+                  formControlName="recargo1"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Línea Impositiva 2 -->
+          <div class="subsection">
+            <span class="subsection-label">LÍNEA IMPOSITIVA 2</span>
+            <div class="field-row field-row-4">
+              <div class="field">
+                <label class="field-label">Base</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  class="field-input"
+                  [class.campo-fallido]="hasFieldError('base2')"
+                  formControlName="base2"
+                />
+              </div>
+              <div class="field">
+                <label class="field-label">IVA %</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  class="field-input"
+                  [class.campo-fallido]="hasFieldError('iva2')"
+                  formControlName="iva2"
+                />
+              </div>
+              <div class="field">
+                <label class="field-label">Cuota</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  class="field-input"
+                  [class.campo-fallido]="hasFieldError('cuota2')"
+                  formControlName="cuota2"
+                />
+              </div>
+              <div class="field">
+                <label class="field-label">Rec.</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  class="field-input"
+                  [class.campo-fallido]="hasFieldError('recargo2')"
+                  formControlName="recargo2"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Línea Impositiva 3 -->
+          <div class="subsection">
+            <span class="subsection-label">LÍNEA IMPOSITIVA 3</span>
+            <div class="field-row field-row-4">
+              <div class="field">
+                <label class="field-label">Base</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  class="field-input"
+                  [class.campo-fallido]="hasFieldError('base3')"
+                  formControlName="base3"
+                />
+              </div>
+              <div class="field">
+                <label class="field-label">IVA %</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  class="field-input"
+                  [class.campo-fallido]="hasFieldError('iva3')"
+                  formControlName="iva3"
+                />
+              </div>
+              <div class="field">
+                <label class="field-label">Cuota</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  class="field-input"
+                  [class.campo-fallido]="hasFieldError('cuota3')"
+                  formControlName="cuota3"
+                />
+              </div>
+              <div class="field">
+                <label class="field-label">Rec.</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  class="field-input"
+                  [class.campo-fallido]="hasFieldError('recargo3')"
+                  formControlName="recargo3"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- RETENCIONES E IRPF -->
+        <section class="form-section">
+          <h2 class="section-title">RETENCIONES E IRPF</h2>
+          <div class="field-row field-row-3">
+            <div class="field">
+              <label class="field-label">Base Ret.</label>
+              <input
+                type="number"
+                step="0.01"
+                class="field-input"
+                [class.campo-fallido]="hasFieldError('base_retencion')"
+                formControlName="base_retencion"
+              />
+            </div>
+            <div class="field">
+              <label class="field-label">% IRPF</label>
+              <input
+                type="number"
+                step="1"
+                class="field-input"
+                [class.campo-fallido]="hasFieldError('porcentaje_retencion')"
+                formControlName="porcentaje_retencion"
+              />
+            </div>
+            <div class="field">
+              <label class="field-label">Cuota Ret.</label>
+              <input
+                type="number"
+                step="1"
+                class="field-input"
+                [class.campo-fallido]="hasFieldError('cuota_retencion')"
+                formControlName="cuota_retencion"
+              />
+            </div>
+          </div>
+        </section>
+
+        <!-- IMPORTE TOTAL -->
+        <section
+          class="form-section total-section"
+          [class.total-section-error]="hasFieldError('importe_total')"
+        >
+          <div class="total-row">
+            <span class="total-label">IMPORTE TOTAL</span>
+            <span class="total-value">
+              <input
+                type="number"
+                step="0.01"
+                class="field-input total-input"
+                [class.total-input-error]="hasFieldError('importe_total')"
+                formControlName="importe_total"
+              />
+              <span
+                class="currency"
+                [class.currency-error]="hasFieldError('importe_total')"
+                >€</span
+              >
+            </span>
+          </div>
+        </section>
+
+        <!-- ENTIDADES -->
+        <section class="form-section">
+          <h2 class="section-title">ENTIDADES</h2>
+
+          <!-- Proveedor -->
+          <div class="entity-row">
+            <div class="entity-field">
+              <label class="field-label entity-label">Proveedor</label>
+              <input
+                type="text"
+                class="field-input"
+                [class.campo-fallido]="hasFieldError('nombre_proveedor')"
+                formControlName="nombre_proveedor"
+              />
+            </div>
+            <div class="entity-field">
+              <label class="field-label">NIF Emisor</label>
+              <input
+                type="text"
+                class="field-input"
+                [class.campo-fallido]="hasFieldError('nif_emision')"
+                formControlName="nif_emision"
+              />
+            </div>
+          </div>
+
+          <!-- Cliente -->
+          <div class="entity-row">
+            <div class="entity-field">
+              <label class="field-label entity-label">Cliente</label>
+              <input
+                type="text"
+                class="field-input"
+                [class.campo-fallido]="hasFieldError('nombre_cliente')"
+                formControlName="nombre_cliente"
+              />
+            </div>
+            <div class="entity-field">
+              <label class="field-label">NIF Receptor</label>
+              <input
+                type="text"
+                class="field-input"
+                [class.campo-fallido]="hasFieldError('nif_receptor')"
+                formControlName="nif_receptor"
+              />
+            </div>
+          </div>
+        </section>
+      </form>
+    </div>
   </div>
 </div>

@@ -58,7 +58,7 @@ export function toInputDate(fecha: string | null): string | null {
   const dmy = txt.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
   if (dmy) {
     const [, d, m, y] = dmy;
-    return `${y}-${m}-${d}`;
+    return `${d}/${m}${y}`;
   }
 
   const iso = txt.match(/^(\d{4}-\d{2}-\d{2})/);

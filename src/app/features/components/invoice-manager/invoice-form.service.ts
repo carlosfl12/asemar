@@ -133,12 +133,14 @@ export class InvoiceFormService {
   validateInvoice(options: any): string[] {
     const errorCodes: string[] = [];
 
-    if (!this.compareResult(
-      [options.base1 ?? 0, options.base2 ?? 0, options.base3 ?? 0],
-      [options.cuota1 ?? 0, options.cuota2 ?? 0, options.cuota3 ?? 0],
-      [options.recargo1 ?? 0, options.recargo2 ?? 0, options.recargo3 ?? 0],
-      options.importe_total ?? 0,
-    )) {
+    if (
+      !this.compareResult(
+        [options.base1 ?? 0, options.base2 ?? 0, options.base3 ?? 0],
+        [options.cuota1 ?? 0, options.cuota2 ?? 0, options.cuota3 ?? 0],
+        [options.recargo1 ?? 0, options.recargo2 ?? 0, options.recargo3 ?? 0],
+        options.importe_total ?? 0,
+      )
+    ) {
       errorCodes.push('305');
     }
 
@@ -146,11 +148,19 @@ export class InvoiceFormService {
       errorCodes.push('307');
     }
 
-    if (!options.nif_emision || options.nif_emision === '' || options.nif_emision === null) {
+    if (
+      !options.nif_emision ||
+      options.nif_emision === '' ||
+      options.nif_emision === null
+    ) {
       errorCodes.push('308');
     }
 
-    if (!options.nif_receptor || options.nif_receptor === '' || options.nif_receptor === null) {
+    if (
+      !options.nif_receptor ||
+      options.nif_receptor === '' ||
+      options.nif_receptor === null
+    ) {
       errorCodes.push('309');
     }
 
@@ -171,11 +181,21 @@ export class InvoiceFormService {
     const ivaTotal = ivas.reduce((acc, val) => acc + Number(val), 0);
     const recargoTotal = recargos.reduce((acc, val) => acc + Number(val), 0);
     const t = total ?? 0;
-
-    return t === baseTotal + ivaTotal - recargoTotal;
+    /*
+    console.log('BASE TOTAL', baseTotal);
+    console.log('IVA TOTAL', ivaTotal);
+    console.log('RECARGO TOTAL', recargoTotal);
+    console.log('SUMA TOTAL ', baseTotal + ivaTotal - recargoTotal);
+    console.log('TOTAL', t);
+    console.log('DIFERENCIA', t - (baseTotal + ivaTotal - recargoTotal));*/
+    return t == baseTotal + ivaTotal - recargoTotal;
   }
 
-  buildSaveOptions(formValue: InvoiceRow, invoiceRow: InvoiceRow, userId: string): any {
+  buildSaveOptions(
+    formValue: InvoiceRow,
+    invoiceRow: InvoiceRow,
+    userId: string,
+  ): any {
     return {
       prefijo: formValue.prefijo ?? null,
       numero_factura: formValue.numero_factura ?? null,
