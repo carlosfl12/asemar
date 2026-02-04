@@ -49,6 +49,8 @@
             {{ row.createdAt }}
             <span *ngIf="row.userName" class="user-name"
               >· {{ row.userName }}</span
+            ><span *ngIf="row.app_name" class="user-name"
+              >· {{ row.app_name }}</span
             >
           </div>
           <div class="elapsed-time">
@@ -126,10 +128,31 @@
         </button>
       </div>
       <div class="pdf-controls">
-        <button type="button" class="zoom-btn" (click)="zoomOut()" title="Reducir">−</button>
-        <span class="zoom-level">{{ (pdfZoom() * 100) | number:'1.0-0' }}%</span>
-        <button type="button" class="zoom-btn" (click)="zoomIn()" title="Ampliar">+</button>
-        <button type="button" class="zoom-btn zoom-reset" (click)="resetZoom()" title="Restablecer">↺</button>
+        <button
+          type="button"
+          class="zoom-btn"
+          (click)="zoomOut()"
+          title="Reducir"
+        >
+          −
+        </button>
+        <span class="zoom-level">{{ pdfZoom() * 100 | number: "1.0-0" }}%</span>
+        <button
+          type="button"
+          class="zoom-btn"
+          (click)="zoomIn()"
+          title="Ampliar"
+        >
+          +
+        </button>
+        <button
+          type="button"
+          class="zoom-btn zoom-reset"
+          (click)="resetZoom()"
+          title="Restablecer"
+        >
+          ↺
+        </button>
       </div>
     </div>
 

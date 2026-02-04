@@ -7,6 +7,7 @@ export interface UiInvoiceItem {
   entryTime: string;
   row: InvoiceRow;
   userName?: string;
+  app_name?: string;
 }
 
 export interface TimeComparison {
@@ -69,6 +70,31 @@ export function toInputDate(fecha: string | null): string | null {
     const d = new Date(ms);
     const pad = (n: number) => `${n}`.padStart(2, '0');
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
+  return null;
+}
+
+export function toDisplayDate(fecha: string | null): string | null {
+  if (!isFilled(fecha)) return null;
+  const txt = String(fecha);
+
+  // Si ya está en formato DD/MM/YYYY, devolverlo tal cual
+  const dmy = txt.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (dmy) return txt;
+
+  // Si está en formato YYYY-MM-DD, convertir a DD/MM/YYYY
+  const iso = txt.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (iso) {
+    const [, y, m, d] = iso;
+    return `${d}/${m}/${y}`;
+  }
+
+  // Intentar parsear y formatear
+  const ms = Date.parse(txt);
+  if (!isNaN(ms)) {
+    const date = new Date(ms);
+    const pad = (n: number) => `${n}`.padStart(2, '0');
+    return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}`;
   }
   return null;
 }

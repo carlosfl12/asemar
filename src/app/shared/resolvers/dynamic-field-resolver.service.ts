@@ -89,10 +89,17 @@ export class DynamicFieldResolverService {
       type: 'text',
       placeholder: 'El nif del emisor y del receptor es el mismo',
     },
+    '311': {
+      key: '311',
+      label: 'No existe número de factura',
+      control: 'numero_factura',
+      type: 'text',
+      placeholder: 'No existe número de factura',
+    },
   };
   resolve(
     codes: Array<Number | string>,
-    labelOverride?: Record<string, string>
+    labelOverride?: Record<string, string>,
   ): DynamicFields<keyof InvoiceRow>[] {
     const out: DynamicFields<keyof InvoiceRow>[] = [];
 

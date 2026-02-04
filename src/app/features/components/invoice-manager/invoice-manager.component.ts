@@ -206,12 +206,16 @@ export class InvoiceManagerComponent implements OnInit, OnDestroy {
     const moveHandler = (e: MouseEvent | TouchEvent) => {
       if (!this.isResizing) return;
 
-      const container = document.querySelector('.modal-revision-body') as HTMLElement;
+      const container = document.querySelector(
+        '.modal-revision-body',
+      ) as HTMLElement;
       if (!container) return;
 
       const containerRect = container.getBoundingClientRect();
-      const clientX = e instanceof MouseEvent ? e.clientX : e.touches[0].clientX;
-      const percentage = ((clientX - containerRect.left) / containerRect.width) * 100;
+      const clientX =
+        e instanceof MouseEvent ? e.clientX : e.touches[0].clientX;
+      const percentage =
+        ((clientX - containerRect.left) / containerRect.width) * 100;
 
       const clampedPercentage = Math.max(25, Math.min(75, percentage));
       this.leftPanelWidth.set(clampedPercentage);
@@ -310,6 +314,7 @@ export class InvoiceManagerComponent implements OnInit, OnDestroy {
     if (errorCodes.length > 0) {
       console.warn('Hay códigos con error');
       this.loadErrorCodes(errorCodes.join(';'));
+      console.warn('Errores: ', errorCodes);
       return;
     }
 

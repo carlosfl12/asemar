@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { InvoiceRow } from '../../../models/invoice.models';
-import { toInputDate, normalizeNumber, isValidDate } from './invoice.utils';
+import { toInputDate, toDisplayDate, normalizeNumber, isValidDate } from './invoice.utils';
 
 export type InvoiceFormGroup = FormGroup<{
   numero_factura: ReturnType<FormBuilder['control']>;
@@ -168,6 +168,10 @@ export class InvoiceFormService {
       errorCodes.push('310');
     }
 
+    if (options.numero_factura === '') {
+      errorCodes.push('311');
+    }
+
     return errorCodes;
   }
 
@@ -201,7 +205,7 @@ export class InvoiceFormService {
       numero_factura: formValue.numero_factura ?? null,
       nombre_cliente: formValue.nombre_cliente ?? null,
       nombre_proveedor: formValue.nombre_proveedor ?? null,
-      fecha: formValue.fecha ?? null,
+      fecha: toDisplayDate(formValue.fecha) ?? null,
       nif_emision: formValue.nif_emision,
       nif_receptor: formValue.nif_receptor,
       cif_lateral: formValue.cif_lateral,
