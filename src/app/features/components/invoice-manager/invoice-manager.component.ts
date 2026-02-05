@@ -39,6 +39,8 @@ import {
   normalizeFileName,
 } from './invoice.utils';
 
+import { InputNumberModule, InputNumber } from 'primeng/inputnumber';
+
 interface RealTimeData {
   value: number;
   timestamp: number | string;
@@ -52,6 +54,7 @@ interface RealTimeData {
     ReactiveFormsModule,
     NgxExtendedPdfViewerModule,
     PdfViewerModule,
+    InputNumber,
   ],
   templateUrl: './invoice-manager.component.html',
   styleUrls: ['./invoice-manager.component.scss'],

@@ -114,59 +114,8 @@
 
   <!-- Body del modal -->
   <div class="modal-revision-body">
-    <!-- Panel PDF/Imagen -->
-    <div class="pdf-panel" [style.width.%]="leftPanelWidth()">
-      <div class="pdf-container">
-        <div
-          #visualizador
-          class="pdf-viewer"
-          [innerHTML]="iframe"
-          [style.transform]="'scale(' + pdfZoom() + ')'"
-        ></div>
-        <button class="pdf-external-link" title="Abrir en nueva ventana">
-          <span>⧉</span>
-        </button>
-      </div>
-      <div class="pdf-controls">
-        <button
-          type="button"
-          class="zoom-btn"
-          (click)="zoomOut()"
-          title="Reducir"
-        >
-          −
-        </button>
-        <span class="zoom-level">{{ pdfZoom() * 100 | number: "1.0-0" }}%</span>
-        <button
-          type="button"
-          class="zoom-btn"
-          (click)="zoomIn()"
-          title="Ampliar"
-        >
-          +
-        </button>
-        <button
-          type="button"
-          class="zoom-btn zoom-reset"
-          (click)="resetZoom()"
-          title="Restablecer"
-        >
-          ↺
-        </button>
-      </div>
-    </div>
-
-    <!-- Divisor arrastrable -->
-    <div
-      class="resizer"
-      (mousedown)="startResize($event)"
-      (touchstart)="startResize($event)"
-    >
-      <div class="resizer-handle"></div>
-    </div>
-
     <!-- Panel Formulario -->
-    <div class="form-panel" [style.width.%]="rightPanelWidth()">
+    <div class="form-panel" [style.width.%]="leftPanelWidth()">
       <form [formGroup]="form" (ngSubmit)="saveDataAndSend()">
         <!-- Ocultos -->
         <input type="hidden" formControlName="url" />
@@ -207,43 +156,59 @@
             <div class="field-row field-row-4">
               <div class="field">
                 <label class="field-label">Base</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  class="field-input"
-                  [class.campo-fallido]="hasFieldError('base1')"
+                <p-inputNumber
                   formControlName="base1"
-                />
+                  [minFractionDigits]="2"
+                  [maxFractionDigits]="2"
+                  mode="decimal"
+                  locale="es-ES"
+                  inputStyleClass="field-input total-input"
+                  [ngClass]="{
+                    'total-input-error': hasFieldError('base1'),
+                  }"
+                ></p-inputNumber>
               </div>
               <div class="field">
                 <label class="field-label">IVA %</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  class="field-input"
-                  [class.campo-fallido]="hasFieldError('iva1')"
+                <p-inputNumber
                   formControlName="iva1"
-                />
+                  [minFractionDigits]="2"
+                  [maxFractionDigits]="2"
+                  mode="decimal"
+                  locale="es-ES"
+                  inputStyleClass="field-input total-input"
+                  [ngClass]="{
+                    'total-input-error': hasFieldError('iva1'),
+                  }"
+                ></p-inputNumber>
               </div>
               <div class="field">
                 <label class="field-label">Cuota</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  class="field-input"
-                  [class.campo-fallido]="hasFieldError('cuota1')"
+                <p-inputNumber
                   formControlName="cuota1"
-                />
+                  [minFractionDigits]="2"
+                  [maxFractionDigits]="2"
+                  mode="decimal"
+                  locale="es-ES"
+                  inputStyleClass="field-input total-input"
+                  [ngClass]="{
+                    'total-input-error': hasFieldError('cuota1'),
+                  }"
+                ></p-inputNumber>
               </div>
               <div class="field">
                 <label class="field-label">Rec.</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  class="field-input"
-                  [class.campo-fallido]="hasFieldError('recargo1')"
+                <p-inputNumber
                   formControlName="recargo1"
-                />
+                  [minFractionDigits]="2"
+                  [maxFractionDigits]="2"
+                  mode="decimal"
+                  locale="es-ES"
+                  inputStyleClass="field-input total-input"
+                  [ngClass]="{
+                    'total-input-error': hasFieldError('recargo1'),
+                  }"
+                ></p-inputNumber>
               </div>
             </div>
           </div>
@@ -254,43 +219,59 @@
             <div class="field-row field-row-4">
               <div class="field">
                 <label class="field-label">Base</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  class="field-input"
-                  [class.campo-fallido]="hasFieldError('base2')"
+                <p-inputNumber
                   formControlName="base2"
-                />
+                  [minFractionDigits]="2"
+                  [maxFractionDigits]="2"
+                  mode="decimal"
+                  locale="es-ES"
+                  inputStyleClass="field-input total-input"
+                  [ngClass]="{
+                    'total-input-error': hasFieldError('base2'),
+                  }"
+                ></p-inputNumber>
               </div>
               <div class="field">
                 <label class="field-label">IVA %</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  class="field-input"
-                  [class.campo-fallido]="hasFieldError('iva2')"
+                <p-inputNumber
                   formControlName="iva2"
-                />
+                  [minFractionDigits]="2"
+                  [maxFractionDigits]="2"
+                  mode="decimal"
+                  locale="es-ES"
+                  inputStyleClass="field-input total-input"
+                  [ngClass]="{
+                    'total-input-error': hasFieldError('iva2'),
+                  }"
+                ></p-inputNumber>
               </div>
               <div class="field">
                 <label class="field-label">Cuota</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  class="field-input"
-                  [class.campo-fallido]="hasFieldError('cuota2')"
+                <p-inputNumber
                   formControlName="cuota2"
-                />
+                  [minFractionDigits]="2"
+                  [maxFractionDigits]="2"
+                  mode="decimal"
+                  locale="es-ES"
+                  inputStyleClass="field-input total-input"
+                  [ngClass]="{
+                    'total-input-error': hasFieldError('cuota2'),
+                  }"
+                ></p-inputNumber>
               </div>
               <div class="field">
                 <label class="field-label">Rec.</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  class="field-input"
-                  [class.campo-fallido]="hasFieldError('recargo2')"
+                <p-inputNumber
                   formControlName="recargo2"
-                />
+                  [minFractionDigits]="2"
+                  [maxFractionDigits]="2"
+                  mode="decimal"
+                  locale="es-ES"
+                  inputStyleClass="field-input total-input"
+                  [ngClass]="{
+                    'total-input-error': hasFieldError('recargo2'),
+                  }"
+                ></p-inputNumber>
               </div>
             </div>
           </div>
@@ -301,43 +282,59 @@
             <div class="field-row field-row-4">
               <div class="field">
                 <label class="field-label">Base</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  class="field-input"
-                  [class.campo-fallido]="hasFieldError('base3')"
+                <p-inputNumber
                   formControlName="base3"
-                />
+                  [minFractionDigits]="2"
+                  [maxFractionDigits]="2"
+                  mode="decimal"
+                  locale="es-ES"
+                  inputStyleClass="field-input total-input"
+                  [ngClass]="{
+                    'total-input-error': hasFieldError('base3'),
+                  }"
+                ></p-inputNumber>
               </div>
               <div class="field">
                 <label class="field-label">IVA %</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  class="field-input"
-                  [class.campo-fallido]="hasFieldError('iva3')"
+                <p-inputNumber
                   formControlName="iva3"
-                />
+                  [minFractionDigits]="2"
+                  [maxFractionDigits]="2"
+                  mode="decimal"
+                  locale="es-ES"
+                  inputStyleClass="field-input total-input"
+                  [ngClass]="{
+                    'total-input-error': hasFieldError('iva3'),
+                  }"
+                ></p-inputNumber>
               </div>
               <div class="field">
                 <label class="field-label">Cuota</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  class="field-input"
-                  [class.campo-fallido]="hasFieldError('cuota3')"
+                <p-inputNumber
                   formControlName="cuota3"
-                />
+                  [minFractionDigits]="2"
+                  [maxFractionDigits]="2"
+                  mode="decimal"
+                  locale="es-ES"
+                  inputStyleClass="field-input total-input"
+                  [ngClass]="{
+                    'total-input-error': hasFieldError('cuota3'),
+                  }"
+                ></p-inputNumber>
               </div>
               <div class="field">
                 <label class="field-label">Rec.</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  class="field-input"
-                  [class.campo-fallido]="hasFieldError('recargo3')"
+                <p-inputNumber
                   formControlName="recargo3"
-                />
+                  [minFractionDigits]="2"
+                  [maxFractionDigits]="2"
+                  mode="decimal"
+                  locale="es-ES"
+                  inputStyleClass="field-input total-input"
+                  [ngClass]="{
+                    'total-input-error': hasFieldError('recargo3'),
+                  }"
+                ></p-inputNumber>
               </div>
             </div>
           </div>
@@ -349,33 +346,45 @@
           <div class="field-row field-row-3">
             <div class="field">
               <label class="field-label">Base Ret.</label>
-              <input
-                type="number"
-                step="0.01"
-                class="field-input"
-                [class.campo-fallido]="hasFieldError('base_retencion')"
+              <p-inputNumber
                 formControlName="base_retencion"
-              />
+                [minFractionDigits]="2"
+                [maxFractionDigits]="2"
+                mode="decimal"
+                locale="es-ES"
+                inputStyleClass="field-input total-input"
+                [ngClass]="{
+                  'total-input-error': hasFieldError('base_retencion'),
+                }"
+              ></p-inputNumber>
             </div>
             <div class="field">
               <label class="field-label">% IRPF</label>
-              <input
-                type="number"
-                step="1"
-                class="field-input"
-                [class.campo-fallido]="hasFieldError('porcentaje_retencion')"
+              <p-inputNumber
                 formControlName="porcentaje_retencion"
-              />
+                [minFractionDigits]="2"
+                [maxFractionDigits]="2"
+                mode="decimal"
+                locale="es-ES"
+                inputStyleClass="field-input total-input"
+                [ngClass]="{
+                  'total-input-error': hasFieldError('porcentaje_retencion'),
+                }"
+              ></p-inputNumber>
             </div>
             <div class="field">
               <label class="field-label">Cuota Ret.</label>
-              <input
-                type="number"
-                step="1"
-                class="field-input"
-                [class.campo-fallido]="hasFieldError('cuota_retencion')"
+              <p-inputNumber
                 formControlName="cuota_retencion"
-              />
+                [minFractionDigits]="2"
+                [maxFractionDigits]="2"
+                mode="decimal"
+                locale="es-ES"
+                inputStyleClass="field-input total-input"
+                [ngClass]="{
+                  'total-input-error': hasFieldError('cuota_retencion'),
+                }"
+              ></p-inputNumber>
             </div>
           </div>
         </section>
@@ -388,13 +397,17 @@
           <div class="total-row">
             <span class="total-label">IMPORTE TOTAL</span>
             <span class="total-value">
-              <input
-                type="number"
-                step="0.01"
-                class="field-input total-input"
-                [class.total-input-error]="hasFieldError('importe_total')"
+              <p-inputNumber
                 formControlName="importe_total"
-              />
+                [minFractionDigits]="2"
+                [maxFractionDigits]="2"
+                mode="decimal"
+                locale="es-ES"
+                inputStyleClass="field-input total-input"
+                [ngClass]="{
+                  'total-input-error': hasFieldError('importe_total'),
+                }"
+              ></p-inputNumber>
               <span
                 class="currency"
                 [class.currency-error]="hasFieldError('importe_total')"
@@ -453,6 +466,57 @@
           </div>
         </section>
       </form>
+    </div>
+
+    <!-- Divisor arrastrable -->
+    <div
+      class="resizer"
+      (mousedown)="startResize($event)"
+      (touchstart)="startResize($event)"
+    >
+      <div class="resizer-handle"></div>
+    </div>
+
+    <!-- Panel PDF/Imagen -->
+    <div class="pdf-panel" [style.width.%]="rightPanelWidth()">
+      <div class="pdf-container">
+        <div
+          #visualizador
+          class="pdf-viewer"
+          [innerHTML]="iframe"
+          [style.transform]="'scale(' + pdfZoom() + ')'"
+        ></div>
+        <button class="pdf-external-link" title="Abrir en nueva ventana">
+          <span>⧉</span>
+        </button>
+      </div>
+      <div class="pdf-controls">
+        <button
+          type="button"
+          class="zoom-btn"
+          (click)="zoomOut()"
+          title="Reducir"
+        >
+          −
+        </button>
+        <span class="zoom-level">{{ pdfZoom() * 100 | number: "1.0-0" }}%</span>
+        <button
+          type="button"
+          class="zoom-btn"
+          (click)="zoomIn()"
+          title="Ampliar"
+        >
+          +
+        </button>
+        <button
+          type="button"
+          class="zoom-btn zoom-reset"
+          (click)="resetZoom()"
+          title="Restablecer"
+        >
+          ↺
+        </button>
+      </div>
     </div>
   </div>
 </div>

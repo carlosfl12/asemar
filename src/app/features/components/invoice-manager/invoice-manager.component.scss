@@ -887,6 +887,29 @@ h2 {
   }
 }
 
+::ng-deep p-inputnumber {
+  .p-inputnumber-input {
+    width: 100px;
+    text-align: right;
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e40af;
+    border: none;
+    background: transparent !important;
+    padding: 0;
+
+    &:focus {
+      outline: none;
+      box-shadow: none !important;
+    }
+  }
+
+  &.total-input-error .p-inputnumber-input {
+    background: #fee2e2 !important;
+    color: #b91c1c !important;
+  }
+}
+
 .currency {
   font-size: 18px;
   font-weight: 700;
