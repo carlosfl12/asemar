@@ -90,6 +90,7 @@ export class InvoiceManagerComponent implements OnInit, OnDestroy {
   currentTime = signal<Date>(new Date());
   lastNumDoc = signal<number | null>(null);
   iframe: SafeHtml = '';
+  private lastIframeUrl = '';
 
   // UI state
   showAll = signal(false);
@@ -533,9 +534,13 @@ export class InvoiceManagerComponent implements OnInit, OnDestroy {
     const userId = this.selectedUserId() ?? '0';
     try {
       const rows = await this.invoiceApi.fetchAllInvoices(userId);
-      const items = rows.map((row: any, idx: number) =>
-        toUiItem(row, row.id ?? idx + 1),
-      );
+      const items = rows
+        .map((row: any, idx: number) => toUiItem(row, row.id ?? idx + 1))
+        .sort((a, b) => {
+          const da = new Date(a.row.created_at ?? a.row.fecha ?? 0).getTime();
+          const db = new Date(b.row.created_at ?? b.row.fecha ?? 0).getTime();
+          return db - da;
+        });
       this.invoices.set(items);
 
       items.forEach((item) => this.resolveUserName(item));
@@ -570,7 +575,10 @@ export class InvoiceManagerComponent implements OnInit, OnDestroy {
   }
 
   private createIframe(): void {
-    const iframeHtml = `<iframe src="${this.pdfUrl()}" allow="clipboard-write" width="640" height="480"></iframe>`;
+    const url = this.pdfUrl();
+    if (url === this.lastIframeUrl) return;
+    this.lastIframeUrl = url;
+    const iframeHtml = `<iframe src="${url}" allow="clipboard-write" width="640" height="480"></iframe>`;
     this.iframe = this.sanitizer.bypassSecurityTrustHtml(iframeHtml);
   }
 

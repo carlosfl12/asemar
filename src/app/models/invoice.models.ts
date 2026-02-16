@@ -39,6 +39,7 @@ export interface InvoiceRow {
   code_error?: string | null;
   id_user?: number | null;
   id_session?: number | null;
+  created_at?: string | null;
 }
 
 export interface IncomingEnvelope {

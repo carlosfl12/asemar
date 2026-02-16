@@ -182,6 +182,14 @@ export function normalizeNumber(val: unknown): number | null {
 
 // ==================== INVOICE MAPPERS ====================
 
+function formatDateDDMMYYYY(raw: string | null | undefined): string {
+  if (!raw) return new Date().toLocaleString();
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return raw;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} - ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
 export function toUiItem(
   row: InvoiceRow,
   fallbackIndex: number | string,
@@ -193,7 +201,7 @@ export function toUiItem(
   return {
     id,
     fileName,
-    createdAt: row.fecha ?? new Date().toLocaleString(),
+    createdAt: formatDateDDMMYYYY(row.created_at ?? row.fecha),
     entryTime: entryTime ?? row.timestamp ?? new Date().toISOString(),
     row: { ...row },
   };

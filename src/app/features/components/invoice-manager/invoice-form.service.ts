@@ -1,7 +1,12 @@
 import { inject, Injectable } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { InvoiceRow } from '../../../models/invoice.models';
-import { toInputDate, toDisplayDate, normalizeNumber, isValidDate } from './invoice.utils';
+import {
+  toInputDate,
+  toDisplayDate,
+  normalizeNumber,
+  isValidDate,
+} from './invoice.utils';
 
 export type InvoiceFormGroup = FormGroup<{
   numero_factura: ReturnType<FormBuilder['control']>;
@@ -133,16 +138,16 @@ export class InvoiceFormService {
   validateInvoice(options: any): string[] {
     const errorCodes: string[] = [];
 
-    if (
-      !this.compareResult(
-        [options.base1 ?? 0, options.base2 ?? 0, options.base3 ?? 0],
-        [options.cuota1 ?? 0, options.cuota2 ?? 0, options.cuota3 ?? 0],
-        [options.recargo1 ?? 0, options.recargo2 ?? 0, options.recargo3 ?? 0],
-        options.importe_total ?? 0,
-      )
-    ) {
-      errorCodes.push('305');
-    }
+    // if (
+    //   !this.compareResult(
+    //     [options.base1 ?? 0, options.base2 ?? 0, options.base3 ?? 0],
+    //     [options.cuota1 ?? 0, options.cuota2 ?? 0, options.cuota3 ?? 0],
+    //     [options.recargo1 ?? 0, options.recargo2 ?? 0, options.recargo3 ?? 0],
+    //     options.importe_total ?? 0,
+    //   )
+    // ) {
+    //   // errorCodes.push('305');
+    // }
 
     if (!isValidDate(options.fecha)) {
       errorCodes.push('307');
