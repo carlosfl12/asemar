@@ -18,7 +18,7 @@ self.addEventListener("push", (event) => {
 
       const title = (data && data.title) || "Ha entrado un cliente";
       const body = (data && data.body) || "haz click para entrar";
-      const url = (data && data.url) || "https://pr99.esphera.ai/#/facturas";
+      const url = (data && data.url) || "https://pr99.factuls.com/#/facturas";
 
       await self.registration.showNotification(title, {
         body,
@@ -33,7 +33,7 @@ self.addEventListener("notificationclick", (event) => {
   // URL objetivo (con saneado)
   const raw =
     (event.notification?.data && event.notification.data.url) ||
-    "https://pr99.esphera.ai/#/facturas";
+    "https://pr99.factuls.com/#/facturas";
   const urlStr = String(raw).trim();
 
   event.waitUntil(

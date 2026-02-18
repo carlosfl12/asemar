@@ -6,6 +6,10 @@ export interface InvoiceRow {
   nif_emision: string | null;
   nif_receptor: string | null;
   cif_lateral: string | null;
+  base0: number | null;
+  iva0: number | null;
+  cuota0: number | null;
+  recargo0: number | null;
   base1: number | null;
   iva1: number | null;
   cuota1: number | null;

@@ -24,7 +24,7 @@
     }
   },
   "/api": {
-    "target": "https://pr99.esphera.ai",
+    "target": "https://pr99.factuls.com",
     "secure": true,
     "changeOrigin": true,
     "logLevel": "debug",

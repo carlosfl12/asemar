@@ -150,6 +150,68 @@
         <section class="form-section">
           <h2 class="section-title">IMPORTES E IVA</h2>
 
+          <div class="subsection">
+            <span class="subsection-label">LÍNEA IMPOSITIVA 0</span>
+            <div class="field-row field-row-4">
+              <div class="field">
+                <label class="field-label">Base</label>
+                <p-inputNumber
+                  formControlName="base0"
+                  [minFractionDigits]="2"
+                  [maxFractionDigits]="2"
+                  mode="decimal"
+                  locale="es-ES"
+                  inputStyleClass="field-input total-input"
+                  [ngClass]="{
+                    'total-input-error': hasFieldError('base0'),
+                  }"
+                ></p-inputNumber>
+              </div>
+              <div class="field">
+                <label class="field-label">IVA %</label>
+                <p-inputNumber
+                  formControlName="iva0"
+                  [minFractionDigits]="2"
+                  [maxFractionDigits]="2"
+                  mode="decimal"
+                  locale="es-ES"
+                  inputStyleClass="field-input total-input"
+                  [ngClass]="{
+                    'total-input-error': hasFieldError('iva0'),
+                  }"
+                ></p-inputNumber>
+              </div>
+              <div class="field">
+                <label class="field-label">Cuota</label>
+                <p-inputNumber
+                  formControlName="cuota0"
+                  [minFractionDigits]="2"
+                  [maxFractionDigits]="2"
+                  mode="decimal"
+                  locale="es-ES"
+                  inputStyleClass="field-input total-input"
+                  [ngClass]="{
+                    'total-input-error': hasFieldError('cuota0'),
+                  }"
+                ></p-inputNumber>
+              </div>
+              <div class="field">
+                <label class="field-label">Rec.</label>
+                <p-inputNumber
+                  formControlName="recargo0"
+                  [minFractionDigits]="2"
+                  [maxFractionDigits]="2"
+                  mode="decimal"
+                  locale="es-ES"
+                  inputStyleClass="field-input total-input"
+                  [ngClass]="{
+                    'total-input-error': hasFieldError('recargo0'),
+                  }"
+                ></p-inputNumber>
+              </div>
+            </div>
+          </div>
+
           <!-- Línea Impositiva 1 -->
           <div class="subsection">
             <span class="subsection-label">LÍNEA IMPOSITIVA 1</span>

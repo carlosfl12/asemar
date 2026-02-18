@@ -17,6 +17,10 @@ export type InvoiceFormGroup = FormGroup<{
   nif_emision: ReturnType<FormBuilder['control']>;
   nif_receptor: ReturnType<FormBuilder['control']>;
   cif_lateral: ReturnType<FormBuilder['control']>;
+  base0: ReturnType<FormBuilder['control']>;
+  iva0: ReturnType<FormBuilder['control']>;
+  cuota0: ReturnType<FormBuilder['control']>;
+  recargo0: ReturnType<FormBuilder['control']>;
   base1: ReturnType<FormBuilder['control']>;
   iva1: ReturnType<FormBuilder['control']>;
   cuota1: ReturnType<FormBuilder['control']>;
@@ -44,6 +48,10 @@ export type InvoiceFormGroup = FormGroup<{
 }>;
 
 const NUMERIC_FIELDS = [
+  'base0',
+  'iva0',
+  'cuota0',
+  'recargo0',
   'base1',
   'iva1',
   'cuota1',
@@ -79,6 +87,11 @@ export class InvoiceFormService {
       nif_emision: this.fb.control<string | null>(null),
       nif_receptor: this.fb.control<string | null>(null),
       cif_lateral: this.fb.control<string | null>(null),
+
+      base0: this.fb.control<number | null>(null),
+      iva0: this.fb.control<number | null>(null),
+      cuota0: this.fb.control<number | null>(null),
+      recargo0: this.fb.control<number | null>(null),
 
       base1: this.fb.control<number | null>(0),
       iva1: this.fb.control<number | null>(0),
@@ -214,6 +227,10 @@ export class InvoiceFormService {
       nif_emision: formValue.nif_emision,
       nif_receptor: formValue.nif_receptor,
       cif_lateral: formValue.cif_lateral,
+      base0: formValue.base0,
+      iva0: formValue.iva0,
+      cuota0: formValue.cuota0,
+      recargo0: formValue.recargo0,
       base1: formValue.base1,
       iva1: formValue.iva1,
       cuota1: formValue.cuota1,

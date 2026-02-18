@@ -51,7 +51,7 @@ export interface InvoiceSaveOptions {
 export class InvoiceApiService {
   private readonly apiUrl = environment.apiUrl;
   private readonly api = environment.api;
-  private readonly realUrl = 'https://pr99.esphera.ai/api/public/index.php';
+  private readonly realUrl = 'https://pr99.factuls.com/api/public/index.php';
   private readonly key = 'UUe5aT9rjkcxMEXcyHbnVIk3AbKbdNhxTgYdTX84Al3x4Y3cMs';
 
   private readonly http = inject(HttpClient);
