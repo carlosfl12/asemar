@@ -127,10 +127,11 @@ export class InvoiceFormService {
 
   patchRowOnlyFilled(form: InvoiceFormGroup, row: InvoiceRow): void {
     const partial: any = {};
+    const enriched = this.inferMissingBases(row);
 
     Object.keys(form.controls).forEach((k) => {
       const key = k as keyof InvoiceRow;
-      const val = row[key];
+      const val = enriched[key];
 
       if (k === 'fecha') {
         partial[k] = toInputDate(val as string | null);
@@ -211,6 +212,43 @@ export class InvoiceFormService {
     console.log('TOTAL', t);
     console.log('DIFERENCIA', t - (baseTotal + ivaTotal - recargoTotal));*/
     return t == baseTotal + ivaTotal - recargoTotal;
+  }
+
+  private inferMissingBases(row: InvoiceRow): InvoiceRow {
+    const n = (v: unknown): number => normalizeNumber(v) ?? 0;
+    const isNull = (v: unknown): boolean => normalizeNumber(v) === null;
+
+    const total = normalizeNumber((row as any).importe_total);
+    if (total === null) return row;
+
+    const GROUPS = [
+      { base: 'base0', cuota: 'cuota0', recargo: 'recargo0' },
+      { base: 'base1', cuota: 'cuota1', recargo: 'recargo1' },
+      { base: 'base2', cuota: 'cuota2', recargo: 'recargo2' },
+      { base: 'base3', cuota: 'cuota3', recargo: 'recargo3' },
+    ] as const;
+
+    // A base is a candidate only when it's null but its cuota has a real value.
+    // Empty lines (base null + cuota null) are ignored.
+    const nullBases = GROUPS.filter(
+      (g) => isNull((row as any)[g.base]) && !isNull((row as any)[g.cuota]),
+    );
+    if (nullBases.length !== 1) return row;
+
+    const missing = nullBases[0];
+
+    const knownBasesSum = GROUPS.filter((g) => g.base !== missing.base)
+      .reduce((acc, g) => acc + n((row as any)[g.base]), 0);
+    const cuotasSum = GROUPS.reduce((acc, g) => acc + n((row as any)[g.cuota]), 0);
+    const recargosSum = GROUPS.reduce((acc, g) => acc + n((row as any)[g.recargo]), 0);
+    const cuotaRetencion = n((row as any).cuota_retencion);
+
+    // total = Σbases + Σcuotas + Σrecargos − cuota_retencion
+    const inferred = Math.round(
+      (total - knownBasesSum - cuotasSum - recargosSum + cuotaRetencion) * 100,
+    ) / 100;
+
+    return { ...row, [missing.base]: inferred };
   }
 
   buildSaveOptions(

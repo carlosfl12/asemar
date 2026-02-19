@@ -12,7 +12,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ReactiveFormsModule } from '@angular/forms';
-import { Subscription } from 'rxjs';
+import { Subscription, merge } from 'rxjs';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -153,6 +153,7 @@ export class InvoiceManagerComponent implements OnInit, OnDestroy {
     this.startTimer();
     this.loadAll();
     this.setupWebSocketSubscription();
+    this.setupTaxCalculations();
     this.loadTotalInvoices();
     this.getPendingInvoices();
   }
@@ -466,6 +467,26 @@ export class InvoiceManagerComponent implements OnInit, OnDestroy {
       next: (evt: any) => this.handleWebSocketMessage(evt),
       error: (err) => console.error('WS error:', err),
     });
+  }
+
+  private setupTaxCalculations(): void {
+    for (let i = 0; i <= 3; i++) {
+      const baseControl = this.form.get(`base${i}`);
+      const ivaControl = this.form.get(`iva${i}`);
+      if (!baseControl || !ivaControl) continue;
+
+      const sub = merge(
+        baseControl.valueChanges,
+        ivaControl.valueChanges,
+      ).subscribe(() => {
+        const base = parseFloat(baseControl.value) || 0;
+        const iva = parseFloat(ivaControl.value) || 0;
+        const cuota = Math.round(base * iva) / 100;
+        this.form.patchValue({ [`cuota${i}`]: cuota }, { emitEvent: true });
+      });
+
+      this.subscription.add(sub);
+    }
   }
 
   private handleWebSocketMessage(evt: any): void {
